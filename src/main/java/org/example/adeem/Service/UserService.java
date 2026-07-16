@@ -8,6 +8,7 @@ import org.example.adeem.DTO.OUT.UserResponseDTO;
 import org.example.adeem.Enums.Role;
 import org.example.adeem.Model.User;
 import org.example.adeem.Repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +19,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
-    // PasswordEncoder intentionally omitted for now - to be added later with Spring Security setup
+    private final PasswordEncoder passwordEncoder;
 
     // ==================== CREATE ====================
     @Transactional
@@ -30,7 +31,7 @@ public class UserService {
 
         User user = new User();
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword()); // TODO: hash with PasswordEncoder once Security is set up
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setFullName(dto.getFullName());
         user.setPhoneNumber(dto.getPhoneNumber());
         user.setRole(Role.PATIENT); // always PATIENT on public registration - never trust client input here
@@ -91,5 +92,27 @@ public class UserService {
                 user.getRole(),
                 user.getCreatedAt()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponseDTO getByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new APIException("User not found"));
+        return toResponseDTO(user);
+    }
+
+    @Transactional
+    public void updateByEmail(String email, UserUpdateDTO dto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new APIException("User not found"));
+
+        if (dto.getFullName() != null) {
+            user.setFullName(dto.getFullName());
+        }
+        if (dto.getPhoneNumber() != null) {
+            user.setPhoneNumber(dto.getPhoneNumber());
+        }
+
+        userRepository.save(user);
     }
 }
