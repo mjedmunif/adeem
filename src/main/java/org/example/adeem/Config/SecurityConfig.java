@@ -33,6 +33,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/users/register",
+                                "/api/v1/doctors/register",
+                                "/api/v1/doctors/verified",  // المرضى يقدرون يتصفحون الأطباء بدون تسجيل دخول (اختياري، حسب رأيك)
                                 "/api/v1/auth/login"
                         ).permitAll()
                         .anyRequest().authenticated()

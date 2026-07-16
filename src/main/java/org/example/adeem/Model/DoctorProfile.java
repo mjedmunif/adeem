@@ -1,10 +1,11 @@
 package org.example.adeem.Model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import org.example.adeem.Enums.VerificationStatus;
 
 import java.math.BigDecimal;
 
@@ -20,7 +21,7 @@ public class DoctorProfile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true, nullable = false)
     private User user;
 
@@ -29,4 +30,17 @@ public class DoctorProfile {
 
     @Column(name = "price_per_session", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerSession;
+
+    @Column(name = "license_number", nullable = false, unique = true)
+    private String licenseNumber;
+
+    @Column(name = "license_document_url")
+    private String licenseDocumentUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status", nullable = false, length = 20)
+    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
 }
