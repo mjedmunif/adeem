@@ -1,10 +1,10 @@
 package org.example.adeem.Model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -32,7 +32,7 @@ public class Message {
     private String content;
 
     @Column(name = "attachment_url")
-    private String attachmentUrl; // رابط صورة/ملف مرفق (مهم لأمراض جلدية)
+    private String attachmentUrl;
 
     @Column(name = "sent_at", nullable = false, updatable = false)
     private LocalDateTime sentAt;

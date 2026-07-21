@@ -78,7 +78,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(Exception ex) {
         // نسجل الخطأ كامل بالـ log فقط، أبداً لا نكشف ex.getMessage() للمستخدم
-
+        log.info(ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new APIResponse("حدث خطأ غير متوقع، حاول لاحقاً"));

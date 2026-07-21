@@ -1,0 +1,201 @@
+### ==========================================
+### Adeem API - IntelliJ HTTP Client Requests
+### ==========================================
+### كيف تستخدمه:
+### 1. حط هذا الملف بأي مكان داخل مشروع IntelliJ (مثلاً مجلد اسمه http/)
+### 2. شغل السيرفر (Spring Boot) أول
+### 3. اضغط السهم الأخضر ▶️ جنب أي طلب تبيه
+### 4. بعد الـ Login، انسخ التوكن من الرد والصقه بمكان {{token}} و {{doctorToken}} تحت يدوياً
+###    (أو استخدم ملف http-client.env.json للمتغيرات التلقائية - شرحته في الرسالة)
+### ==========================================
+
+
+### ==================== AUTH & REGISTRATION ====================
+
+### 1. Register Patient
+POST http://localhost:8080/api/v1/users/register
+Content-Type: application/json
+
+{
+  "email": "patient@test.com",
+  "password": "12345678",
+  "fullName": "Patient Test",
+  "phoneNumber": "0512345678"
+}
+### 2. Register Doctor
+POST http://localhost:8080/api/v1/doctors/register
+Content-Type: application/json
+
+{
+  "email": "doctor@test.com",
+  "password": "12345678",
+  "fullName": "Doctor Test",
+  "phoneNumber": "0512345679",
+  "specialty": "Dermatology",
+  "pricePerSession": 150,
+  "licenseNumber": "LIC12345",
+  "bio": "Experienced dermatologist"
+}
+
+### 3. Login as Patient (انسخ التوكن من الرد وحطه بمتغير token تحت)
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "patient@test.com",
+  "password": "12345678"
+}
+
+### 4. Login as Doctor (انسخ التوكن من الرد وحطه بمتغير doctorToken تحت)
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "doctor@test.com",
+  "password": "12345678"
+}
+
+
+### ==================== VARIABLES (عدلها يدوياً بعد كل login) ====================
+### @token = eyJhbGciOiJIUzI1NiJ9...  <- توكن المريض هنا
+### @doctorToken = eyJhbGciOiJIUzI1NiJ9...  <- توكن الطبيب هنا
+
+
+### ==================== USERS ====================
+
+### 5. Get My Profile (Patient)
+GET http://localhost:8080/api/v1/users/me
+Authorization: Bearer {{token}}
+
+### 6. Update My Profile (Patient)
+PUT http://localhost:8080/api/v1/users/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Patient Updated Name",
+  "phoneNumber": "0599999999"
+}
+
+
+### ==================== DOCTORS ====================
+
+### 7. Get Verified Doctors (Public - no token needed)
+GET http://localhost:8080/api/v1/doctors/verified
+
+### 8. Get My Doctor Profile
+GET http://localhost:8080/api/v1/doctors/me
+Authorization: Bearer {{doctorToken}}
+
+### 9. Get Pending Doctors (Admin only - will fail unless you have an admin token)
+GET http://localhost:8080/api/v1/doctors/pending
+Authorization: Bearer {{token}}
+
+### 10. Approve/Reject Doctor (Admin only)
+### غيّر الـ {id} برقم الـ doctorProfile الفعلي
+PUT http://localhost:8080/api/v1/doctors/1/verification
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "VERIFIED"
+}
+
+
+### ==================== DOCTOR AVAILABILITY ====================
+
+### 11. Doctor Adds Availability
+POST http://localhost:8080/api/v1/availability
+Authorization: Bearer {{doctorToken}}
+Content-Type: application/json
+
+{
+  "dayOfWeek": "SUNDAY",
+  "startTime": "09:00:00",
+  "endTime": "17:00:00"
+}
+
+### 12. Get My Availability (Doctor)
+GET http://localhost:8080/api/v1/availability/me
+Authorization: Bearer {{doctorToken}}
+
+### 13. Get a Specific Doctor's Availability (Public)
+### غيّر doctorId برقم بروفايل الطبيب الفعلي
+GET http://localhost:8080/api/v1/availability/doctor/1
+
+
+### ==================== APPOINTMENTS ====================
+
+### 14. Get Available Slots for a Doctor on a Date (Public)
+### تأكد التاريخ يوم "SUNDAY" فعلي (أو أي يوم ضفت له Availability)
+GET http://localhost:8080/api/v1/appointments/available-slots?doctorId=1&date=2026-07-26
+
+### 15. Book Appointment (Patient)
+### تأكد appointmentDate يطابق أحد الـ slots اللي رجعت من الطلب اللي فوق
+POST http://localhost:8080/api/v1/appointments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "doctorId": 1,
+  "appointmentDate": "2026-07-26T09:00:00",
+  "consultationType": "CHAT"
+}
+
+### 16. Get My Appointments (Patient)
+GET http://localhost:8080/api/v1/appointments/my-appointments
+Authorization: Bearer {{token}}
+
+### 17. Get My Appointments (Doctor)
+GET http://localhost:8080/api/v1/appointments/doctor-appointments
+Authorization: Bearer {{doctorToken}}
+
+### 18. Cancel Appointment
+### غيّر {id} برقم الموعد الفعلي
+PUT http://localhost:8080/api/v1/appointments/1/cancel
+Authorization: Bearer {{token}}
+
+
+### ==================== NEGATIVE TESTS (يفترض ترجع خطأ) ====================
+
+### 19. Access protected endpoint WITHOUT token -> يفترض 401
+GET http://localhost:8080/api/v1/users/me
+
+### 20. Patient tries to access Admin-only endpoint -> يفترض 403
+GET http://localhost:8080/api/v1/doctors/pending
+Authorization: Bearer {{token}}
+
+### Initiate Payment
+POST http://localhost:8080/api/v1/payments/initiate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "appointmentId": 1
+}
+
+### Confirm Payment (انسخ transactionReference من الرد اللي فوق)
+POST http://localhost:8080/api/v1/payments/confirm
+Content-Type: application/json
+
+{
+  "transactionReference": "MOCK-6CCF14B5-525"
+}
+
+### تأكد الموعد صار CONFIRMED
+GET http://localhost:8080/api/v1/appointments/my-appointments
+Authorization: Bearer {{token}}
+
+### Send Message
+POST http://localhost:8080/api/v1/messages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "appointmentId": 1,
+  "content": "مرحباً دكتور، عندي استفسار"
+}
+
+### Get Conversation
+GET http://localhost:8080/api/v1/messages/1
+Authorization: Bearer {{token}}

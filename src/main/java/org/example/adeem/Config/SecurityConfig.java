@@ -25,6 +25,16 @@ public class SecurityConfig {
     private final org.example.adeem.Security.CustomUserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
 
+    private static final String[] PUBLIC = {
+            "/api/v1/users/register",
+            "/api/v1/doctors/register",
+            "/api/v1/doctors/verified",
+            "/api/v1/availability/doctor/**",
+            "/api/v1/appointments/available-slots",
+            "/api/v1/auth/login",
+            "/api/v1/payments/confirm",
+            "/ws-chat/**"
+    };
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -32,10 +42,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/v1/users/register",
-                                "/api/v1/doctors/register",
-                                "/api/v1/doctors/verified",  // المرضى يقدرون يتصفحون الأطباء بدون تسجيل دخول (اختياري، حسب رأيك)
-                                "/api/v1/auth/login"
+                                PUBLIC
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

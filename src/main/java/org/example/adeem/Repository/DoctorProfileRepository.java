@@ -19,4 +19,6 @@ public interface DoctorProfileRepository extends JpaRepository<DoctorProfile,Lon
     List<DoctorProfile> findByVerificationStatus(VerificationStatus status);
 
     List<DoctorProfile> findBySpecialtyAndVerificationStatus(String specialty, VerificationStatus status);
+
+    Optional<DoctorProfile> findByUserId(Long userId);
 }
