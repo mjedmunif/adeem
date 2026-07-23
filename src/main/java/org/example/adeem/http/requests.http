@@ -199,3 +199,12 @@ Content-Type: application/json
 ### Get Conversation
 GET http://localhost:8080/api/v1/messages/1
 Authorization: Bearer {{token}}
+
+####
+POST http://localhost:8080/api/v1/chatbot/ask
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "عندي طفح جلدي أحمر بالذراع من يومين"
+}
