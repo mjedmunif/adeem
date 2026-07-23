@@ -208,3 +208,47 @@ Content-Type: application/json
 {
   "content": "عندي طفح جلدي أحمر بالذراع من يومين"
 }
+
+
+###
+### 1. احجز موعد نوعه CALL
+POST http://localhost:8080/api/v1/appointments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "doctorId": 1,
+  "appointmentDate": "2026-07-26T14:00:00",
+  "consultationType": "CALL"
+}
+
+###
+POST http://localhost:8080/api/v1/payments/initiate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "appointmentId": 5
+}
+
+### 3. أكد الدفع (confirm)
+POST http://localhost:8080/api/v1/payments/confirm
+Content-Type: application/json
+
+{
+  "transactionReference": "MOCK-71D4F1BD-45D"
+}
+
+### 4. تأكد الموعد فيه meetingLink فعلي
+GET http://localhost:8080/api/v1/appointments/my-appointments
+Authorization: Bearer {{token}}
+
+###
+POST http://localhost:8080/api/v1/messages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "appointmentId": 5,
+  "content": "رسالة اختبار لحظية"
+}

@@ -14,7 +14,9 @@ import org.example.adeem.Repository.DoctorProfileRepository;
 import org.example.adeem.Repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.example.adeem.Enums.ConsultationType;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -24,6 +26,10 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final AppointmentRepository appointmentRepository;
     private final DoctorProfileRepository doctorProfileRepository;
+    private final ZoomApiService zoomApiService;
+
+    // TODO: فعّل هذا السطر يوم يجهز السجل التجاري / وثيقة العمل الحر + الحساب البنكي التجاري
+    // private final MoyasarApiService moyasarApiService;
 
     // ==================== بدء عملية الدفع ====================
     @Transactional
@@ -32,7 +38,6 @@ public class PaymentService {
         Appointment appointment = appointmentRepository.findById(dto.getAppointmentId())
                 .orElseThrow(() -> new APIException("Appointment not found"));
 
-        // تأكد إن المريض اللي يبدأ الدفع هو صاحب الموعد فعلاً (نفس مبدأ حماية IDOR)
         if (!appointment.getPatient().getEmail().equals(patientEmail)) {
             throw new APIException("You are not authorized to pay for this appointment");
         }
@@ -41,7 +46,6 @@ public class PaymentService {
             throw new APIException("This appointment is not awaiting payment");
         }
 
-        // لو فيه محاولة دفع سابقة لنفس الموعد، منرجع نفس السجل بدل ما ننشئ وحدة جديدة
         Payment existing = paymentRepository.findByAppointmentId(appointment.getId()).orElse(null);
         if (existing != null && existing.getStatus() == PaymentStatus.PENDING) {
             return toResponseDTO(existing);
@@ -53,16 +57,32 @@ public class PaymentService {
         Payment payment = new Payment();
         payment.setAppointment(appointment);
         payment.setAmount(doctorProfile.getPricePerSession());
-        payment.setTransactionReference(generateTransactionReference());
         payment.setStatus(PaymentStatus.PENDING);
 
+        // ====================  النشط حالياً: Mock (بدون بوابة دفع حقيقية) ====================
+        payment.setTransactionReference(generateTransactionReference());
+        paymentRepository.save(payment);
+        return toResponseDTO(payment);
+
+        // ====================  معطّل مؤقتاً: Moyasar الفعلي (جاهز، ينتظر السجل التجاري) ====================
+        /*
+        Map<String, String> invoice = moyasarApiService.createInvoice(
+                doctorProfile.getPricePerSession(),
+                "استشارة طبية - " + appointment.getDoctor().getFullName(),
+                "http://localhost:8080/api/v1/payments/callback"
+        );
+
+        payment.setTransactionReference(invoice.get("invoiceId"));
         paymentRepository.save(payment);
 
-        // TODO: هنا يجي التكامل الفعلي مع Moyasar/Tap لاحقاً
-        // مثال: MoyasarResponse response = moyasarClient.createPayment(payment.getAmount(), ...);
-        // payment.setTransactionReference(response.getId());
-
-        return toResponseDTO(payment);
+        return new PaymentResponseDTO(
+                payment.getId(),
+                payment.getAmount(),
+                payment.getTransactionReference(),
+                payment.getStatus(),
+                invoice.get("checkoutUrl")
+        );
+        */
     }
 
     // ==================== تأكيد الدفع (Webhook أو Callback من البوابة) ====================
@@ -83,13 +103,17 @@ public class PaymentService {
         Appointment appointment = payment.getAppointment();
         appointment.setStatus(AppointmentStatus.CONFIRMED);
 
-        // TODO: لو consultationType == CALL، هنا نستدعي Zoom API ونحفظ meetingLink
-        // appointment.setMeetingLink(zoomService.createMeeting(...));
+        if (appointment.getConsultationType() == ConsultationType.CALL) {
+            String topic = "استشارة طبية - " + appointment.getDoctor().getFullName();
+            Map<String, String> meeting = zoomApiService.createMeeting(topic, appointment.getAppointmentDate());
+            appointment.setMeetingId(meeting.get("meetingId"));
+            appointment.setMeetingLink(meeting.get("joinUrl"));
+        }
 
         appointmentRepository.save(appointment);
     }
 
-    // ==================== محاكاة رقم مرجعي مؤقت (بديل مؤقت لحد التكامل الفعلي) ====================
+    // ==================== محاكاة رقم مرجعي مؤقت (Mock) ====================
     private String generateTransactionReference() {
         return "MOCK-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase();
     }
@@ -100,7 +124,7 @@ public class PaymentService {
                 payment.getAmount(),
                 payment.getTransactionReference(),
                 payment.getStatus(),
-                "https://mock-checkout.adeem.sa/" + payment.getTransactionReference() // رابط وهمي للاختبار
+                "https://mock-checkout.adeem.sa/" + payment.getTransactionReference()
         );
     }
 }
