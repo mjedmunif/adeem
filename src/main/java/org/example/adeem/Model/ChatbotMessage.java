@@ -21,6 +21,9 @@ public class ChatbotMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "has_attachment")
+    private boolean hasAttachment = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_id", nullable = false)
     private ChatbotConversation conversation;

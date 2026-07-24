@@ -1,19 +1,18 @@
 ### ==========================================
-### Adeem API - IntelliJ HTTP Client Requests
+### Adeem API — Complete Test Suite
 ### ==========================================
-### كيف تستخدمه:
-### 1. حط هذا الملف بأي مكان داخل مشروع IntelliJ (مثلاً مجلد اسمه http/)
-### 2. شغل السيرفر (Spring Boot) أول
-### 3. اضغط السهم الأخضر ▶️ جنب أي طلب تبيه
-### 4. بعد الـ Login، انسخ التوكن من الرد والصقه بمكان {{token}} و {{doctorToken}} تحت يدوياً
-###    (أو استخدم ملف http-client.env.json للمتغيرات التلقائية - شرحته في الرسالة)
+### الاستخدام:
+### 1. حط الملف بمجلد داخل المشروع (مثلاً http/)
+### 2. شغل السيرفر أول
+### 3. سو ملف http-client.env.json بجنبه (مثال بالأسفل) لتفعيل {{token}} تلقائياً
+### 4. شغل الطلبات بالترتيب من فوق لتحت — كل مرحلة تعتمد على اللي قبلها
 ### ==========================================
 
 
-### ==================== AUTH & REGISTRATION ====================
+### ==================== 1. AUTH & REGISTRATION ====================
 
-### 1. Register Patient
-POST http://localhost:8080/api/v1/users/register
+### 1.1 Register Patient
+POST {{baseUrl}}/users/register
 Content-Type: application/json
 
 {
@@ -22,8 +21,9 @@ Content-Type: application/json
   "fullName": "Patient Test",
   "phoneNumber": "0512345678"
 }
-### 2. Register Doctor
-POST http://localhost:8080/api/v1/doctors/register
+
+### 1.2 Register Doctor (status starts as PENDING)
+POST {{baseUrl}}/doctors/register
 Content-Type: application/json
 
 {
@@ -37,8 +37,8 @@ Content-Type: application/json
   "bio": "Experienced dermatologist"
 }
 
-### 3. Login as Patient (انسخ التوكن من الرد وحطه بمتغير token تحت)
-POST http://localhost:8080/api/v1/auth/login
+### 1.3 Login as Patient
+POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
@@ -46,8 +46,12 @@ Content-Type: application/json
   "password": "12345678"
 }
 
-### 4. Login as Doctor (انسخ التوكن من الرد وحطه بمتغير doctorToken تحت)
-POST http://localhost:8080/api/v1/auth/login
+> {%
+    client.global.set("token", response.body.token);
+%}
+
+### 1.4 Login as Doctor
+POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
@@ -55,20 +59,27 @@ Content-Type: application/json
   "password": "12345678"
 }
 
+> {%
+    client.global.set("doctorToken", response.body.token);
+%}
 
-### ==================== VARIABLES (عدلها يدوياً بعد كل login) ====================
-### @token = eyJhbGciOiJIUzI1NiJ9...  <- توكن المريض هنا
-### @doctorToken = eyJhbGciOiJIUzI1NiJ9...  <- توكن الطبيب هنا
+###
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
 
+{
+  "email": "admin@adeem.sa",
+  "password": "Admin@12345"
+}
 
-### ==================== USERS ====================
+### ==================== 2. USERS ====================
 
-### 5. Get My Profile (Patient)
-GET http://localhost:8080/api/v1/users/me
+### 2.1 Get My Profile (Patient)
+GET {{baseUrl}}/users/me
 Authorization: Bearer {{token}}
 
-### 6. Update My Profile (Patient)
-PUT http://localhost:8080/api/v1/users/me
+### 2.2 Update My Profile
+PUT {{baseUrl}}/users/me
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -77,35 +88,45 @@ Content-Type: application/json
   "phoneNumber": "0599999999"
 }
 
+### 2.3 Access protected endpoint WITHOUT token -> يفترض 401
+GET {{baseUrl}}/users/me
 
-### ==================== DOCTORS ====================
+### 2.4 Patient tries admin-only endpoint -> يفترض 403
+GET {{baseUrl}}/users
+Authorization: Bearer {{token}}
 
-### 7. Get Verified Doctors (Public - no token needed)
-GET http://localhost:8080/api/v1/doctors/verified
 
-### 8. Get My Doctor Profile
-GET http://localhost:8080/api/v1/doctors/me
+### ==================== 3. DOCTORS ====================
+
+### 3.1 Get Verified Doctors (Public, no token)
+GET {{baseUrl}}/doctors/verified
+
+### 3.2 Get My Doctor Profile
+GET {{baseUrl}}/doctors/me
 Authorization: Bearer {{doctorToken}}
 
-### 9. Get Pending Doctors (Admin only - will fail unless you have an admin token)
-GET http://localhost:8080/api/v1/doctors/pending
+### 3.3 Get Pending Doctors (Admin only)
+GET {{baseUrl}}/doctors/pending
 Authorization: Bearer {{token}}
 
-### 10. Approve/Reject Doctor (Admin only)
-### غيّر الـ {id} برقم الـ doctorProfile الفعلي
-PUT http://localhost:8080/api/v1/doctors/1/verification
-Authorization: Bearer {{token}}
+### 3.4 Approve Doctor (Admin only)
+### غيّر {id} برقم بروفايل الطبيب الفعلي
+PUT {{baseUrl}}/doctors/1/verification
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBhZGVlbS5zYSIsInVzZXJJZCI6Niwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzg0ODk5NTAxLCJleHAiOjE3ODQ5ODU5MDF9.adHsjgLpmKwkOoCzxSsFBJ3E_p-cakfRwJ-pkUKRdnI
 Content-Type: application/json
 
 {
   "status": "VERIFIED"
 }
 
+### 3.5 Get Verified Doctors مرة ثانية بعد التوثيق
+GET {{baseUrl}}/doctors/verified
 
-### ==================== DOCTOR AVAILABILITY ====================
 
-### 11. Doctor Adds Availability
-POST http://localhost:8080/api/v1/availability
+### ==================== 4. DOCTOR AVAILABILITY ====================
+
+### 4.1 Doctor Adds Availability
+POST {{baseUrl}}/availability
 Authorization: Bearer {{doctorToken}}
 Content-Type: application/json
 
@@ -115,24 +136,21 @@ Content-Type: application/json
   "endTime": "17:00:00"
 }
 
-### 12. Get My Availability (Doctor)
-GET http://localhost:8080/api/v1/availability/me
+### 4.2 Get My Availability (Doctor)
+GET {{baseUrl}}/availability/me
 Authorization: Bearer {{doctorToken}}
 
-### 13. Get a Specific Doctor's Availability (Public)
-### غيّر doctorId برقم بروفايل الطبيب الفعلي
-GET http://localhost:8080/api/v1/availability/doctor/1
+### 4.3 Get a Specific Doctor's Availability (Public)
+GET {{baseUrl}}/availability/doctor/1
 
 
-### ==================== APPOINTMENTS ====================
+### ==================== 5. APPOINTMENTS — CHAT FLOW ====================
 
-### 14. Get Available Slots for a Doctor on a Date (Public)
-### تأكد التاريخ يوم "SUNDAY" فعلي (أو أي يوم ضفت له Availability)
-GET http://localhost:8080/api/v1/appointments/available-slots?doctorId=1&date=2026-07-26
+### 5.1 Get Available Slots (Public)
+GET {{baseUrl}}/appointments/available-slots?doctorId=1&date=2026-07-26
 
-### 15. Book Appointment (Patient)
-### تأكد appointmentDate يطابق أحد الـ slots اللي رجعت من الطلب اللي فوق
-POST http://localhost:8080/api/v1/appointments
+### 5.2 Book Appointment — CHAT type
+POST {{baseUrl}}/appointments
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -142,31 +160,23 @@ Content-Type: application/json
   "consultationType": "CHAT"
 }
 
-### 16. Get My Appointments (Patient)
-GET http://localhost:8080/api/v1/appointments/my-appointments
+> {%
+    client.global.set("appointmentId", response.body.id);
+%}
+
+### 5.3 Get My Appointments (Patient)
+GET {{baseUrl}}/appointments/my-appointments
 Authorization: Bearer {{token}}
 
-### 17. Get My Appointments (Doctor)
-GET http://localhost:8080/api/v1/appointments/doctor-appointments
+### 5.4 Get My Appointments (Doctor)
+GET {{baseUrl}}/appointments/doctor-appointments
 Authorization: Bearer {{doctorToken}}
 
-### 18. Cancel Appointment
-### غيّر {id} برقم الموعد الفعلي
-PUT http://localhost:8080/api/v1/appointments/1/cancel
-Authorization: Bearer {{token}}
 
+### ==================== 6. PAYMENT — CHAT APPOINTMENT ====================
 
-### ==================== NEGATIVE TESTS (يفترض ترجع خطأ) ====================
-
-### 19. Access protected endpoint WITHOUT token -> يفترض 401
-GET http://localhost:8080/api/v1/users/me
-
-### 20. Patient tries to access Admin-only endpoint -> يفترض 403
-GET http://localhost:8080/api/v1/doctors/pending
-Authorization: Bearer {{token}}
-
-### Initiate Payment
-POST http://localhost:8080/api/v1/payments/initiate
+### 6.1 Initiate Payment
+POST {{baseUrl}}/payments/initiate
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -174,34 +184,104 @@ Content-Type: application/json
   "appointmentId": 1
 }
 
-### Confirm Payment (انسخ transactionReference من الرد اللي فوق)
-POST http://localhost:8080/api/v1/payments/confirm
+> {%
+    client.global.set("transactionRef", response.body.transactionReference);
+%}
+
+### 6.2 Confirm Payment
+POST {{baseUrl}}/payments/confirm
 Content-Type: application/json
 
 {
-  "transactionReference": "MOCK-6CCF14B5-525"
+  "transactionReference": "MOCK-99323ECC-3C4"
 }
 
-### تأكد الموعد صار CONFIRMED
-GET http://localhost:8080/api/v1/appointments/my-appointments
+### 6.3 تأكد الموعد صار CONFIRMED
+GET {{baseUrl}}/appointments/my-appointments
 Authorization: Bearer {{token}}
 
-### Send Message
-POST http://localhost:8080/api/v1/messages
+
+### ==================== 7. CHAT MESSAGING ====================
+
+### 7.1 Send Message
+POST {{baseUrl}}/messages
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "appointmentId": 1,
+  "appointmentId": {{appointmentId}},
   "content": "مرحباً دكتور، عندي استفسار"
 }
 
-### Get Conversation
-GET http://localhost:8080/api/v1/messages/1
+### 7.2 Doctor replies
+POST {{baseUrl}}/messages
+Authorization: Bearer {{doctorToken}}
+Content-Type: application/json
+
+{
+  "appointmentId": {{appointmentId}},
+  "content": "تفضل، وش المشكلة؟"
+}
+
+### 7.3 Get Conversation History
+GET {{baseUrl}}/messages/{{appointmentId}}
 Authorization: Bearer {{token}}
 
-####
-POST http://localhost:8080/api/v1/chatbot/ask
+
+### ==================== 8. APPOINTMENTS — CALL FLOW (Zoom) ====================
+
+### 8.1 Book Appointment — CALL type
+POST {{baseUrl}}/appointments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "doctorId": 1,
+  "appointmentDate": "2026-07-26T11:00:00",
+  "consultationType": "CALL"
+}
+
+> {%
+    client.global.set("callAppointmentId", response.body.id);
+%}
+
+### 8.2 Initiate Payment for CALL appointment
+POST {{baseUrl}}/payments/initiate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "appointmentId": {{callAppointmentId}}
+}
+
+> {%
+    client.global.set("transactionRef", response.body.transactionReference);
+%}
+
+### 8.3 Confirm Payment — هذا يفعّل Zoom تلقائياً
+POST {{baseUrl}}/payments/confirm
+Content-Type: application/json
+
+{
+  "transactionReference": "{{transactionRef}}"
+}
+
+### 8.4 تأكد meetingLink طلع رابط Zoom حقيقي
+GET {{baseUrl}}/appointments/my-appointments
+Authorization: Bearer {{token}}
+
+
+### ==================== 9. CANCEL APPOINTMENT ====================
+
+### 9.1 Cancel an appointment
+PUT {{baseUrl}}/appointments/1/cancel
+Authorization: Bearer {{token}}
+
+
+### ==================== 10. CHATBOT (وهج) — TEXT ====================
+
+### 10.1 First message
+POST {{baseUrl}}/chatbot/ask
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -209,46 +289,104 @@ Content-Type: application/json
   "content": "عندي طفح جلدي أحمر بالذراع من يومين"
 }
 
+> {%
+    client.global.set("conversationId", response.body.conversationId);
+%}
 
-###
-### 1. احجز موعد نوعه CALL
-POST http://localhost:8080/api/v1/appointments
+### 10.2 استمرار نفس المحادثة
+POST {{baseUrl}}/chatbot/ask
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "فيه حكة بسيطة، وما جربت أي علاج",
+  "conversationId": {{conversationId}}
+}
+
+### 10.3 رسالة بالإنجليزي
+POST {{baseUrl}}/chatbot/ask
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "I have a red rash on my arm"
+}
+
+### 10.4 سيناريو طارئ
+POST {{baseUrl}}/chatbot/ask
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "عندي صعوبة تنفس وتورم شديد بالوجه"
+}
+
+### 10.5 Get Chatbot Conversation History
+GET {{baseUrl}}/chatbot/{{conversationId}}
+Authorization: Bearer {{token}}
+
+
+### ==================== 11. CHATBOT — IMAGE UPLOAD ====================
+### استخدم Postman لهذا الطلب (رفع ملفات أسهل فيه)
+
+### 11.1 Ask with image attached
+POST {{baseUrl}}/chatbot/ask-with-image
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="content"
+
+هذا تحليل الدم الأخير، وش رأيك فيه؟
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="test-image.jpg"
+Content-Type: image/jpeg
+
+< ./test-image.jpg
+--WebAppBoundary--
+
+
+### ==================== 12. NEGATIVE / SECURITY TESTS ====================
+
+### 12.1 وصول بدون توكن -> 401
+GET {{baseUrl}}/appointments/my-appointments
+
+### 12.2 مريض يحاول يدفع لموعد مو موعده
+POST {{baseUrl}}/payments/initiate
+Authorization: Bearer {{doctorToken}}
+Content-Type: application/json
+
+{
+  "appointmentId": {{appointmentId}}
+}
+
+### 12.3 مريض يحاول يوثق طبيب (admin-only) -> 403
+PUT {{baseUrl}}/doctors/1/verification
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "VERIFIED"
+}
+
+### 12.4 محاولة حجز موعد بوقت خارج دوام الطبيب
+POST {{baseUrl}}/appointments
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "doctorId": 1,
-  "appointmentDate": "2026-07-26T14:00:00",
-  "consultationType": "CALL"
+  "appointmentDate": "2026-07-26T22:00:00",
+  "consultationType": "CHAT"
 }
 
-###
-POST http://localhost:8080/api/v1/payments/initiate
+### 12.5 محاولة حجز موعد بنفس الوقت مرتين -> 409
+POST {{baseUrl}}/appointments
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "appointmentId": 5
-}
-
-### 3. أكد الدفع (confirm)
-POST http://localhost:8080/api/v1/payments/confirm
-Content-Type: application/json
-
-{
-  "transactionReference": "MOCK-71D4F1BD-45D"
-}
-
-### 4. تأكد الموعد فيه meetingLink فعلي
-GET http://localhost:8080/api/v1/appointments/my-appointments
-Authorization: Bearer {{token}}
-
-###
-POST http://localhost:8080/api/v1/messages
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "appointmentId": 5,
-  "content": "رسالة اختبار لحظية"
+  "doctorId": 1,
+  "appointmentDate": "2026-07-26T09:00:00",
+  "consultationType": "CHAT"
 }

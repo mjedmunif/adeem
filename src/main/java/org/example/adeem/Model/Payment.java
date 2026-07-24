@@ -29,7 +29,7 @@ public class Payment {
     private BigDecimal amount;
 
     @Column(name = "transaction_reference", unique = true, nullable = false)
-    private String transactionReference; // هذا الـ ID اللي بيجيك من ميسر لتوثيق العملية
+    private String transactionReference;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

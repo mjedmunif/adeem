@@ -27,7 +27,7 @@ public class Appointment {
 
     @ManyToOne
     @JoinColumn(name = "doctor_id", nullable = false)
-    private User doctor; // يربط مباشرة بـ User من نوع DOCTOR لسهولة الكويري
+    private User doctor;
 
     @Column(name = "appointment_date", nullable = false)
     private LocalDateTime appointmentDate;

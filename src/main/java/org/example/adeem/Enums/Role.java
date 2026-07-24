@@ -1,5 +1,5 @@
 package org.example.adeem.Enums;
 
 public enum Role {
-    DOCTOR, PATIENT
+    DOCTOR, PATIENT, ADMIN
 }

@@ -22,7 +22,7 @@ public class MessageController {
 
     // ==================== إرسال رسالة (REST - يحفظ وينشر عبر WebSocket بنفس الوقت) ====================
     @PostMapping
-    public ResponseEntity<MessageResponseDTO> sendMessage(
+    public ResponseEntity<?> sendMessage(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody SendMessageDTO dto) {
 
@@ -32,7 +32,7 @@ public class MessageController {
 
     // ==================== جلب سجل المحادثة ====================
     @GetMapping("/{appointmentId}")
-    public ResponseEntity<List<MessageResponseDTO>> getConversation(
+    public ResponseEntity<?> getConversation(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long appointmentId) {
 

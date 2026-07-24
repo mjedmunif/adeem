@@ -27,7 +27,7 @@ public class AppointmentController {
 
     // ==================== الـ slots الفاضية ليوم معين (عام) ====================
     @GetMapping("/available-slots")
-    public ResponseEntity<List<LocalTime>> getAvailableSlots(
+    public ResponseEntity<?> getAvailableSlots(
             @RequestParam Long doctorId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
@@ -49,7 +49,7 @@ public class AppointmentController {
     // ==================== مواعيدي (مريض) ====================
     @PreAuthorize("hasRole('PATIENT')")
     @GetMapping("/my-appointments")
-    public ResponseEntity<List<AppointmentResponseDTO>> getMyAppointmentsAsPatient(
+    public ResponseEntity<?> getMyAppointmentsAsPatient(
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(appointmentService.getMyAppointmentsAsPatient(userDetails.getUsername()));
@@ -58,7 +58,7 @@ public class AppointmentController {
     // ==================== مواعيدي (طبيب) ====================
     @PreAuthorize("hasRole('DOCTOR')")
     @GetMapping("/doctor-appointments")
-    public ResponseEntity<List<AppointmentResponseDTO>> getMyAppointmentsAsDoctor(
+    public ResponseEntity<?> getMyAppointmentsAsDoctor(
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(appointmentService.getMyAppointmentsAsDoctor(userDetails.getUsername()));

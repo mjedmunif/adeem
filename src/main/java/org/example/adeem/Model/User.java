@@ -40,15 +40,12 @@ public class User {
     private LocalDateTime createdAt = LocalDateTime.now();
 
 
-    // 1. علاقة مع ملف الطبيب (لو كان المستخدم دكتور)
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private DoctorProfile doctorProfile;
 
-    // 2. قائمة بالمواعيد التي حجزها هذا المستخدم (لو كان مريضاً)
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     private List<Appointment> patientAppointments;
 
-    // 3. قائمة بالمواعيد القادمة له (لو كان طبيباً)
     @OneToMany(mappedBy = "doctor", cascade ={ CascadeType.MERGE , CascadeType.PERSIST})
     private List<Appointment> doctorAppointments;
 }
